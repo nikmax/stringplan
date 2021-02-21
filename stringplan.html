@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Stringplan 2</title>
+
+	<style type="text/css">
+		body {
+			margin: 0;
+		}
+		#module {
+			margin: 71px 0 0 0;
+			padding:10px;
+			/*
+			display: flex;
+			
+			justify-content: center;
+		  	flex-direction: column;
+	    	align-items: center;
+			*/
+			min-height: 100vh;
+			min-width: 100vw;
+			position: relative;
+
+		}
+		.nav {
+			height: 50px;
+			z-index: 1;
+			background-color: white;
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 10px;
+			border-bottom: solid 1px;
+		}
+		.modul {
+			position: absolute;
+			padding: 0;
+			color: rgb(183,171,171);
+			background-color: rgb(183,171,171);
+			border-style: ridge;
+			border-width: thin;
+			transition: background-color 1s;
+			display: flex;
+			justify-content: center;
+			flex-direction: column;
+			align-items: center;
+		}
+		.modul-marked{
+			background-color: rgb(100,100,100);
+		}
+	</style>
+
+	<script type="text/javascript">
+		let info,mod, can;
+		const divStep = 10;
+		const minRand = 30;
+		let mp = {
+			'sx': 0, // scroll OffsetX
+			'sy': 0, // scroll OffsetX
+			'mx': 0, // moue Post absolute
+			'my': 0,
+			'isDown':false,
+			'isMarked': false,
+			'Id':'0,0', // cliked div
+			'x':0,   // differend
+			'y':0,
+			'lastx':0,
+			'lasty':0
+		};
+		let module = {'l':350,'t':'sharpNY','w':99.2,'h':196,'m':5,'x':0,'y':0,'r':0,'b':0,'items': []};
+		if(localStorage.getItem('module')){
+			module = JSON.parse(localStorage.getItem('module'));
+		}
+		if(localStorage.getItem('module')){
+			module = JSON.parse(localStorage.getItem('module'));
+		}
+		function _initMain(){
+			info = document.getElementById('info');
+			mod = document.querySelector('#module');
+			
+			document.addEventListener('contextmenu', function (e) {
+				// no context
+                e.preventDefault();
+	        }, false);
+	        mod.addEventListener('mousemove',mouseMove,true);
+	        window.addEventListener('scroll',function(){
+					mp.sx = window.pageXOffset;
+					mp.sy = window.pageYOffset;
+	        },true);
+			mod.addEventListener('mousedown',function(e){
+				if(mp.isMarked) {resetMarked();return;}
+					mp.isDown = true;
+					mp.x = e.target.offsetLeft - e.clientX;
+					mp.y = e.target.offsetTop - e.clientY;
+					mp.Id = e.target.id;
+					mp.lastx = e.clientX;
+					mp.lasty = e.clientY;
+			},true);
+			mod.addEventListener('mouseup',function(e){
+				let div = document.getElementById(mp.Id);
+				getMousePos(e);
+				
+				mp.isDown = false;
+				if(mp.isMarked){
+					console.log('marked end');
+					can.style.width = (e.clientX - mp.lastx) + 'px';
+					can.style.height = (e.clientY - mp.lasty) + 'px';
+					mod.appendChild(can);
+					return;
+				}
+
+				if(e.button == 0){/* left click - new modul */
+					if(e.clientX == mp.lastx && e.clientY == mp.lasty){
+						if(mp.Id == 'module'){
+							
+							let x= Math.round((mp.mx-module.w/2)/divStep)*divStep;
+							let y = Math.round((mp.my-module.h/2)/divStep)*divStep;
+							for(let i in module.items){
+								let m = module.items[i];
+								/* helper for raster position */
+								if (mp.mx >= m.x && mp.mx <= m.x+module.w){ x = m.x; }
+								if (mp.my >= m.y && mp.my <= m.y+module.h){ y = m.y; }
+								if (mp.mx >= module.r) x = Math.round((module.r+divStep)/divStep)*divStep;
+								if (mp.mx <= module.x) x = Math.round((module.x - module.w - divStep)/divStep)*divStep;
+								if (mp.my >= module.b) y = Math.round((module.b + divStep)/divStep)*divStep;
+								if (mp.my <= module.t) y = Math.round((module.t - module.h - divStep)/divStep)*divStep;
+								// 
+							}
+							let n = {
+								'id':Math.floor(Math.random()*1000000),
+								'd':'h',
+								'x': x,
+								'y': y
+							};
+							module.items.push(n);
+						}else {/*remove*/
+							for(let i in module.items){
+								if(module.items[i].id == mp.Id) {
+									module.items.splice(i,1);
+									break
+								};
+							}
+						}
+						showModule();
+					}
+				}else{/* right click*/
+					for(let i in module.items){
+						if(module.items[i].id == mp.Id){
+							if(module.items[i].d == 'h') module.items[i].d = 'q';
+							else module.items[i].d = 'h';
+							break;
+						}
+					}
+					showModule();
+				}
+			},true);
+			showModule();
+		}
+		function showModule(){
+			mod.innerHTML = "";
+			let minx=0,miny=0;
+			let fx = true,fy = true;
+			for(let i in module.items){
+				let n = module.items[i];
+				if(fx) {
+					fx=false; module.x = n.x; module.r = n.x + (n.d == 'h' ? module.w : module.h);
+				}else{
+					if(module.x > n.x) module.x = n.x;
+					if(module.r < n.x + (n.d == 'h' ? module.w : module.h)) module.r = n.x + (n.d == 'h' ? module.w : module.h);
+				}
+				if(fy){
+					fy=false; module.y = n.y; module.b = n.y + (n.d == 'q' ? module.w : module.h);
+				}else{
+					if(module.y > n.y) module.y = n.y;
+					if(module.b < n.y + (n.d == 'q' ? module.w : module.h)) module.b = n.y + (n.d == 'q' ? module.w : module.h);
+				}
+			}
+			if(module.x < minRand) minx = minRand - module.x;
+			else minx = 0;
+			if(module.y < minRand) miny = minRand - module.y;
+			else miny = 0;
+			module.x += minx;
+			module.y += miny;
+			for(let i in module.items){
+				module.items[i].x = module.items[i].x + minx;
+				module.items[i].y = module.items[i].y + miny;
+				let n = module.items[i];
+
+				mod.innerHTML += `
+					<div id="${n.id}" style="width:${(n.d == 'h' ? module.w : module.h)}px;height:${(n.d == 'q' ? module.w : module.h)}px; margin:${module.m}px ;top:${n.y}px; left:${n.x}px" class="modul">
+						<!--
+						id:${n.id}<br>left:${n.x}<br>top:${n.y}<br>right:${n.x + (n.d == 'h' ? module.w : module.h)}<br>bottom:${n.y + (n.d == 'q' ? module.w : module.h)}
+						-->
+					</div>`;				
+			}
+			if(mod.innerHTML == '') mod.innerHTML = 'Bitte mit Click starten';
+			localStorage.setItem('module',JSON.stringify(module));
+		}
+		function mouseMove(e){
+			//function(e){
+				e.preventDefault();	
+				getMousePos(e);					
+				info.innerHTML = `
+					module: ${module.items.length} x 
+					${module.t} ${module.l} Watt / 
+					Gesamteistung ${module.items.length * module.l}  Watt
+					 <!--** x: ${mp.mx}, y: ${mp.my}, id:${e.target.id}-->
+				`;
+				if(mp.isDown){
+					if(mp.Id != 'module'){ /* move the div */
+						let div = document.getElementById(mp.Id);
+						for(let i in module.items){
+							if(module.items[i].id == mp.Id) {
+								module.items[i].x = Math.round((e.clientX + mp.x)/divStep)*divStep;
+								module.items[i].y = Math.round((e.clientY + mp.y)/divStep)*divStep;
+								break;
+							}
+						}
+						showModule();
+					}else{ /* mark modules */
+						if(!mp.isMarked) {
+							console.log('mark begin:');
+							can = document.createElement("div");
+							can.id = 'canvas';
+							can.style.position = "absolute";
+							can.style.width = "0px";
+							can.style.height = "0px";
+							can.style.background = "grey";
+							can.style.opacity = 0.2;
+							can.style.left = mp.mx + 'px';
+							can.style.top = mp.my + 'px';
+
+							mp.isMarked = true;
+						}
+						/*   resize marked area */
+					}
+				}
+			//}
+		}
+		function resetMarked(){
+			console.log('marked lose');
+			mp.isMarked = false;
+			can.style.left = 0;
+			can.style.width = 0;
+			can.style.top = 0;
+			can.style.height = 0;
+			can.remove();
+		}
+		function getMousePos(e){
+			/**
+			renew mp.mx and mp.my
+			**/
+			mp.mx = e.clientX-mod.offsetLeft+mp.sx;
+			mp.my = e.clientY-mod.offsetTop+mp.sy;
+		}
+	</script>
+</head>
+
+<body  onload="_initMain()">
+	<div id="nav" class="nav">
+		<!--button onclick="javascript:toggleDraw(this);return false;">show</button-->
+		<span id="info"></span>
+	</div>
+	<div id="module"></div>
+</body>
+</html>
