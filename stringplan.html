@@ -261,14 +261,211 @@
 			mp.mx = e.clientX-mod.offsetLeft+mp.sx;
 			mp.my = e.clientY-mod.offsetTop+mp.sy;
 		}
+		function drawStrings(){
+			document.getElementById('module').style = 'z-index:-10;';
+			window.graph =  new Graph(document.getElementById('graph'));
+		}
+
+
+/**************************************************/
+      /**
+       * Class for SVG Line 
+       */
+      class Line {
+
+        /**
+         * Create line starting at point
+         * @param {Vector} pos 
+         */
+        constructor(pos) {
+
+          this.el = document.createElementNS('http://www.w3.org/2000/svg','line');
+          this.el.classList.add('line');
+
+          this.el.setAttribute('stroke', document.getElementById('selColor').value);
+          this.el.setAttribute('stroke-width', document.getElementById('selWidth').value);
+          this.el.id  = Math.floor(Math.random()*1000000);
+          this.setPosition(pos);
+        }
+
+        /**
+         * Position the line with coordinates
+         * @param {Vector} pos 
+         */
+        setPosition(pos) {
+          this.el.setAttribute('x1', pos.x1);
+          this.el.setAttribute('y1', pos.y1);
+          this.el.setAttribute('x2', pos.x2);
+          this.el.setAttribute('y2', pos.y2);
+        }
+
+        /**
+         * Get position of the line
+         * @returns {Vector}
+         */
+        getPosition() {
+          return {
+            x1: this.el.getAttribute('x1'),
+            y1: this.el.getAttribute('y1'),
+            x2: this.el.getAttribute('x2'),
+            y2: this.el.getAttribute('y1'),
+          };
+        }
+
+        /**
+         * Rotate the line from its origin
+         * @param {Vector} angle 
+         */
+        setRotate(angle) {
+          let newPos = pos = this.getPosition();
+          newPos.x2 = pos - radius * Math.cos(angle);
+          newPos.y2 = pos - radius * Math.sin(angle);
+          this.setPosition(newPos);
+        }
+
+        /**
+         * Returns the HTMLElement for the line
+         * @returns {HTMLElement}
+         */
+        getHtmlEl() {
+          return this.el;
+        }
+      }
+
+
+
+
+      /**
+       * Class representing Graph container
+       */
+      class Graph {
+
+        /**
+         * Bind svg Element to class 
+         * @param {HTMLElement} el 
+         */
+        constructor(el) {
+          this.el = el;
+          document.getElementById('info').onmousemove = this.mouseMove.bind(this);
+          document.getElementById('info').onmouseup = this.mouseUp.bind(this);
+          document.getElementById('info').onmousedown = this.mouseDown.bind(this);
+
+          /**
+           * List of all child elements
+           */
+          this.elements = [];
+
+          // Default mode
+          this.mode = 'line';
+
+          // Set size for svg
+          this.setSize();    
+
+          // Bind events
+          this.el.onmousedown = this.mouseDown.bind(this);
+          this.el.onmouseup = this.mouseUp.bind(this);
+          this.el.onmouseout = this.mouseOut.bind(this);
+          this.el.onmousemove = this.mouseMove.bind(this);
+        }
+        test(e){
+        	console.log(e.target.id);
+        	e.target.classList.add('hide');
+        	this.mouseDown(e);
+        }
+
+
+        /**
+         * Set the draw mode
+         * @param {String} mode 
+         */
+        setMode(mode) {
+          this.mode = mode;
+        }
+
+        /**
+         * Callback for Mousedown event
+         * @param {HTMLEvent} event 
+         */
+        mouseDown(event) {
+        	console.log('down');
+          this.drawStart = true;
+            let line = new Line({
+              x1: event.pageX,
+              y1: event.pageY,
+              x2: event.pageX,
+              y2: event.pageY
+            });
+            this.current = line;
+            line.onmousedown = this.mouseDown.bind(this);
+            this.el.appendChild(line.getHtmlEl());
+            console.log(event.target.id);
+        }
+
+        /**
+         * Callback for mouseUp
+         * @param {HTMLEvent} event 
+         */
+        mouseUp(event) {
+          console.log('MouseUp');
+          this.drawStart = false;
+          let pos = this.current.getPosition();
+          if(pos.x1 == pos.x2 && pos.y1 == pos.y2) this.current.getHtmlEl().remove();
+          else this.elements.push(this.current);
+          this.current = null;
+
+        }
+        mouseOut(event){
+          //console.log('mouseOut:',event.target);
+        }
+
+        /**
+         * Callback for mouseMove
+         * @param {HTMLEvent} event 
+         */
+        mouseMove(event) {
+          //document.getElementById('info').innerHTML ="X: " + event.pageX + ", Y: " +event.pageY;
+          if (this.drawStart && this.current) {
+            let pos = this.current.getPosition();
+            pos.x2 = event.pageX;
+            pos.y2 = event.pageY;
+            this.current.setPosition(pos);
+            
+          }
+        }
+
+        setSize() {
+          this.el.setAttribute('width', window.innerWidth);
+          this.el.setAttribute('height', window.innerHeight);
+        }
+
+      }
+
+
 	</script>
 </head>
 
 <body  onload="_initMain()">
 	<div id="nav" class="nav">
-		<!--button onclick="javascript:toggleDraw(this);return false;">show</button-->
+		<button onclick="javascript:drawStrings();return false;">Male strings</button>
+        Line width : <select id="selWidth">
+            <option value="1">1</option>
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="7">7</option>
+            <option value="9" selected="selected">9</option>
+            <option value="11">11</option>
+        </select>
+        Color : <select id="selColor">
+            <option value="black">black</option>
+            <option value="blue" selected="selected">blue</option>
+            <option value="red">red</option>
+            <option value="green">green</option>
+            <option value="yellow">yellow</option>
+            <option value="gray">gray</option>
+        </select>
 		<span id="info"></span>
 	</div>
 	<div id="module"></div>
+	<svg id="graph"><!--circle fill="blue" r="5" cx="100" cy="100"--></circle></svg>
 </body>
 </html>

@@ -34,12 +34,15 @@
       }
       #info{
       	 position: fixed;
-      	 top:100px;
-      	 left:100px;
-      	 width: 100px; 
-      	 height: 120px; 
+         display: flex;
+         align-items: center;
+         justify-content: center;
+      	 top:0;
+      	 left:0;
+      	 width: 100%; 
+      	 height: 100px; 
       	 background-color: grey; 
-      	 opacity: 0.2;
+      	 /*opacity: 0.2;*/
       	 z-index: 0; ">
       }
 
@@ -57,10 +60,11 @@
         constructor(pos) {
 
           this.el = document.createElementNS('http://www.w3.org/2000/svg','line');
-          this.el.classList.add('line');
+          //this.el.classList.add('line');
 
-          this.el.setAttribute('stroke', 'red');
-          this.el.setAttribute('stroke-width', '5');
+          this.el.setAttribute('stroke', document.getElementById('selColor').value);
+          this.el.setAttribute('stroke-width', document.getElementById('selWidth').value);
+          this.el.setAttribute('marker-end', 'url(#arrowhead-'+document.getElementById('selColor').value+')');
           this.el.id  = Math.floor(Math.random()*1000000);
           this.setPosition(pos);
         }
@@ -121,9 +125,9 @@
          */
         constructor(el) {
           this.el = el;
-          document.getElementById('info').onmousemove = this.mouseMove.bind(this);
-          document.getElementById('info').onmouseup = this.mouseUp.bind(this);
-          document.getElementById('info').onmousedown = this.mouseDown.bind(this);
+          //document.getElementById('info').onmousemove = this.mouseMove.bind(this);
+          //document.getElementById('info').onmouseup = this.mouseUp.bind(this);
+          //document.getElementById('info').onmousedown = this.mouseDown.bind(this);
 
           /**
            * List of all child elements
@@ -162,7 +166,8 @@
          * @param {HTMLEvent} event 
          */
         mouseDown(event) {
-          this.drawStart = true;
+          if(event.target.id == 'graph'){
+            this.drawStart = true;
             let line = new Line({
               x1: event.pageX,
               y1: event.pageY,
@@ -172,7 +177,10 @@
             this.current = line;
             line.onmousedown = this.mouseDown.bind(this);
             this.el.appendChild(line.getHtmlEl());
-            console.log(event.target.id);
+          }else{
+            
+          }
+          console.log(event.target.id);
         }
 
         /**
@@ -181,11 +189,15 @@
          */
         mouseUp(event) {
           //console.log('MouseUp');
-          this.drawStart = false;
-          let pos = this.current.getPosition();
-          if(pos.x1 == pos.x2 && pos.y1 == pos.y2) this.current.getHtmlEl().remove();
-          else this.elements.push(this.current);
-          this.current = null;
+          if(this.drawStart){
+            this.drawStart = false;
+            let pos = this.current.getPosition();
+            if(pos.x1 == pos.x2 && pos.y1 == pos.y2) this.current.getHtmlEl().remove();
+            else this.elements.push(this.current);
+            this.current = null;
+          }else if(this.moveStart){
+            this.moveStart = false;
+          }
 
         }
         mouseOut(event){
@@ -197,7 +209,7 @@
          * @param {HTMLEvent} event 
          */
         mouseMove(event) {
-          //document.getElementById('info').innerHTML ="X: " + event.pageX + ", Y: " +event.pageY;
+          document.getElementById('icoors').innerHTML ="X: " + event.pageX + ", Y: " +event.pageY + ', id: '+ event.target.id;
           if (this.drawStart && this.current) {
             let pos = this.current.getPosition();
             pos.x2 = event.pageX;
@@ -222,8 +234,45 @@
   </script>
 </head>
 <body>
-  <div id="info"></div>
-    <svg id="graph"><circle fill="blue" r="5" cx="100" cy="100"></circle></svg>
+  <div id="info">
+    <button onclick="javascript:drawStrings();return false;">Male strings</button>
+        <span>Line width : </span><select id="selWidth">
+            <option value="1">1</option>
+            <option value="3" selected="selected">3</option>
+            <option value="5">5</option>
+            <option value="7">7</option>
+            <option value="9">9</option>
+            <option value="11">11</option>
+        </select>
+        <span>Color : </span><select id="selColor">
+            <option value="black" selected="selected">black</option>
+            <option value="blue">blue</option>
+            <option value="red">red</option>
+            <option value="green">green</option>
+            <option value="grey">grey</option>
+        </select>
+        <span id="icoors"></span>
+  </div>
+    <svg id="graph">
+      <circle id="first_cicle" fill="blue" r="5" cx="100" cy="200"></circle>
+      <defs>
+        <marker id="arrowhead-black" markerWidth="10" markerHeight="5" refX="8" refY="2.5" orient="auto">
+          <polygon points="0 0, 10 2.5, 0 5" fill="black"/>
+        </marker>
+        <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="8" refY="2.5" orient="auto">
+          <polygon points="0 0, 10 2.5, 0 5" fill="blue"/>
+        </marker>
+        <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="8" refY="2.5" orient="auto">
+          <polygon points="0 0, 10 2.5, 0 5" fill="red"/>
+        </marker>
+        <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="8" refY="2.5" orient="auto">
+          <polygon points="0 0, 10 2.5, 0 5" fill="green"/>
+        </marker>
+        <marker id="arrowhead-grey" markerWidth="10" markerHeight="7" refX="8" refY="2.5" orient="auto">
+          <polygon points="0 0, 10 2.5, 0 5" fill="grey"/>
+        </marker>
+      </defs>
+</svg>
 </body>
 </html>
 
